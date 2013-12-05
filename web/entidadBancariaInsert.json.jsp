@@ -11,4 +11,5 @@
     String json = objectMapper.writeValueAsString(null);
     response.setContentType("application/json; charset=UTF-8");
     out.print(json);
+    
 %>
