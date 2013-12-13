@@ -9,13 +9,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fpmislata.banco.datos.EntidadBancariaDAO;
 import com.fpmislata.banco.datos.EntidadBancariaDAOImplHibernate;
+import com.fpmislata.banco.negocio.BussinessMessage;
 import com.fpmislata.banco.negocio.EntidadBancaria;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -89,15 +93,29 @@ public class EntidadBancariaController {
     }
 
     @RequestMapping(value = {"/EntidadBancaria"}, method = RequestMethod.POST, consumes = "application/json", produces = "application/json")
-    public void insert(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, @RequestBody String json) {
+    public void insert(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, @RequestBody String json) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
             EntidadBancaria entidadBancaria = (EntidadBancaria) objectMapper.readValue(json, EntidadBancaria.class);
             entidadBancariaDAO.insert(entidadBancaria);
             httpServletResponse.setContentType("application/json; charset=UTF-8");
             json = objectMapper.writeValueAsString(entidadBancaria);
             httpServletResponse.getWriter().println(json);
+
+        } catch (ConstraintViolationException cve) {
+            List<BussinessMessage> listaBussinessMessages = new ArrayList<>();
+            for (ConstraintViolation constraintViolation : cve.getConstraintViolations()) {
+                BussinessMessage bussinessMessage = new BussinessMessage(constraintViolation.getPropertyPath().toString(), constraintViolation.getMessage());
+                listaBussinessMessages.add(bussinessMessage);
+            }
+            httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            httpServletResponse.setContentType("application/json; charset=UTF-8");
+            json = objectMapper.writeValueAsString(listaBussinessMessages);
+            try {
+                httpServletResponse.getWriter().println(json);
+            } catch (IOException ex) {
+            }
         } catch (Exception ex) {
             httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             httpServletResponse.setContentType("text/plain; charset=UTF-8");

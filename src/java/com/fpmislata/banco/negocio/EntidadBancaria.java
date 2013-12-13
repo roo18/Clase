@@ -6,6 +6,9 @@ package com.fpmislata.banco.negocio;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.validation.constraints.*;
+import org.hibernate.validator.constraints.NotBlank;
+
 
 /**
  *
@@ -14,8 +17,12 @@ import java.util.List;
 public class EntidadBancaria {
     
     private int idEntidadBancaria;
+    @NotNull
     private String codigoEntidad;
+    @NotNull
+    @Size(min = 3, max = 60)
     private String nombre;
+    @NotBlank
     private String cif;
     private TipoEntidadBancaria tipoEntidadBancaria;
     private List<SucursalBancaria> sucursalesBancarias = new ArrayList<>();
